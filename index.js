@@ -1,10 +1,11 @@
-const http = require('http');
-// const { parse } = require('url');
+// IMPORT des modules
 
-const PORT = 3000;
+const http = require('http'); /* Création du serveur avec node */
 
-// 
+const PORT = 3000; /* port de lancement du serveur */
 
+// DONNÉES
+// liste des recettes (tableau) servant de données de départ
 let recipes = [
     {
         id: 1,
@@ -22,19 +23,19 @@ let recipes = [
     }
 ];
 
-let nextId = 3;
+let nextId = 3; /* incrémentation du prochain id a partir de 3 */
 
-// 
+// Renvoie de la reponse au format json
 const sendJson = (res, code, payload) => {
     res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(payload));
 };
 
 
-// 
+// Fonction asynchrone ; analyser les requêtes Http
 const parseBody = (req) => {
     return new Promise((resolve, reject) => {
-        let data = '';
+        let data = ''; 
         req.on('data', (chunk) => {
             data += chunk.toString();
         });
@@ -51,19 +52,18 @@ const parseBody = (req) => {
 // créa serveur
 
 http.createServer(async (req, res) => {  // async AVANT (req, res)
-    const reqUrl = new URL(req.url, `http://${req.headers.host}`);
-    const { pathname } = reqUrl;
-    const method = req.method;
+    const reqUrl = new URL(req.url, `http://${req.headers.host}`); /* objet url */
+    const { pathname } = reqUrl; /* chemin */
+    const method = req.method; /* methode */
 
-    // Debug
-    console.log(`${method} ${pathname}`);
+            // ROUTES
 
-    // GET /api/recipes - Retourne toutes les recettes
+    // GET /api/recipes : Toutes les recettes
     if (method === 'GET' && pathname === '/api/recipes') {
         return sendJson(res, 200, recipes);
     }
 
-    // GET /api/recipes/:id - Retourne une recette précise
+    // GET /api/recipes/:id - Une recette précise
     if (method === 'GET' && pathname.startsWith('/api/recipes/') && pathname !== '/api/recipes') {
         const id = Number(pathname.split('/')[3]);
         const recipe = recipes.find(r => r.id === id);
@@ -75,19 +75,19 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
         return sendJson(res, 200, recipe);
     }
 
-    // POST /api/recipes - Crée une nouvelle recette
+    // POST /api/recipes - Nouvelle recette
     if (method === 'POST' && pathname === '/api/recipes') {
         try {
             const body = await parseBody(req);
 
-            // Validation des champs requis
+            // validation des champs 
             if (!body.name || !body.difficulty || !body.ingredients) {
                 return sendJson(res, 400, {
                     error: 'Les champs name, difficulty et ingredients sont requis'
                 });
             }
 
-            // Création de la nouvelle recette
+            // Création de nouvelle recette
             const newRecipe = {
                 id: nextId++,
                 name: body.name,
@@ -96,7 +96,7 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
                 isVegetarian: body.isVegetarian || false
             };
 
-            recipes.push(newRecipe);
+            recipes.push(newRecipe); /* ajout */
 
             return sendJson(res, 201, newRecipe);
         } catch (err) {
@@ -104,18 +104,15 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
         }
     }
 
-
-
-
     // PUT /api/recipes/:id - Modifie entièrement une recette
     if (method === 'PUT' && pathname.startsWith('/api/recipes/')) {
         const id = Number(pathname.split('/')[3]);
-        const index = recipes.findIndex(r => r.id === id);
+        const index = recipes.findIndex(r => r.id === id); /* recherche par index */
+
 
         if (index === -1) {
             return sendJson(res, 404, { error: 'Recette non trouvée' });
         }
-
         try {
             const body = await parseBody(req);
 
@@ -124,7 +121,7 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
                     error: 'Les champs name, difficulty et ingredients sont requis'
                 });
             }
-
+            /*maj */
             const updated = {
                 id,
                 name: body.name,
@@ -133,15 +130,13 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
                 isVegetarian: body.isVegetarian || false
             };
 
-            recipes[index] = updated;
+            recipes[index] = updated; /* applique la modificatio */
             return sendJson(res, 200, updated);
 
         } catch (err) {
             return sendJson(res, 400, { error: 'JSON invalide' });
         }
     }
-
-
 
     // DELETE /api/recipes/:id - Supprime une recette
     if (method === 'DELETE' && pathname.startsWith('/api/recipes/')) {
@@ -157,14 +152,7 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
         return sendJson(res, 200, { message: 'Recette supprimée' });
     }
 
-
-
-
-
-
-
-
-    // Route par défaut - 404
+    // défaut - 404
     sendJson(res, 404, { error: 'Route non trouvée' });
 })
     .listen(PORT, () => {
