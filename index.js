@@ -56,13 +56,33 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
     const { pathname } = reqUrl; /* chemin */
     const method = req.method; /* methode */
 
-            // ROUTES
+            // ROUTES classiques 
 
     // GET /api/recipes : Toutes les recettes
     if (method === 'GET' && pathname === '/api/recipes') {
         return sendJson(res, 200, recipes);
     }
 
+
+            // ROUTES Complexe prt2
+
+    // GET /api/recipes/search?ingredient=poulet
+if (method === 'GET' && pathname === '/api/recipes/search') {
+    const ingredient = reqUrl.searchParams.get('ingredient');
+
+    if (!ingredient) {
+        return sendJson(res, 400, { error: "Le paramètre 'ingredient' est requis" });
+    }
+
+    const results = recipes.filter(recipe =>
+        recipe.ingredients.includes(ingredient)
+    );
+
+    return sendJson(res, 200, results);
+}
+
+
+            // ROUTES classiques 
     // GET /api/recipes/:id - Une recette précise
     if (method === 'GET' && pathname.startsWith('/api/recipes/') && pathname !== '/api/recipes') {
         const id = Number(pathname.split('/')[3]);
@@ -151,6 +171,39 @@ http.createServer(async (req, res) => {  // async AVANT (req, res)
 
         return sendJson(res, 200, { message: 'Recette supprimée' });
     }
+
+
+            // ROUTES complexes 
+
+    // GET /api/recipes/search?vegetarian=true
+if (method === 'GET' && pathname === '/api/recipes/search') {
+    const vegetarian = reqUrl.searchParams.get("vegetarian");
+
+    if (vegetarian !== null) {
+        const isVeg = vegetarian === "true";
+        return sendJson(res, 200, recipes.filter(r => r.isVegetarian === isVeg));
+    }
+
+    const ingredient = reqUrl.searchParams.get("ingredient");
+
+    if (ingredient) {
+        return sendJson(
+            res,
+            200,
+            recipes.filter(r => r.ingredients.includes(ingredient))
+        );
+    }
+
+    return sendJson(res, 400, { error: 'Paramètres invalides' });
+}
+
+
+
+
+
+
+
+
 
     // défaut - 404
     sendJson(res, 404, { error: 'Route non trouvée' });
